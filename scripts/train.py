@@ -27,8 +27,8 @@ def parse_args():
     parser.add_argument("--accumulate_grad_batches", type=int, default=1)
 
     # Paths
-    parser.add_argument("--train_csv", type=str, default="train.csv")
-    parser.add_argument("--val_csv", type=str, default="val.csv")
+    parser.add_argument("--train_csv", type=str, default="data/train.csv")
+    parser.add_argument("--val_csv", type=str, default="data/val.csv")
 
     ## Data loading
     parser.add_argument("--num_workers", type=int, default=8)
@@ -36,6 +36,9 @@ def parse_args():
 
     # Model
     parser.add_argument("--model_name", type=str, default="facebook/wav2vec2-base-960h")
+    
+    ## configs
+    parser.add_argument("--fast_dev_run", action="store_true")
 
     return parser.parse_args()
 
@@ -77,6 +80,7 @@ def main():
         gradient_clip_val=args.gradient_clip_val,
         log_every_n_steps=args.log_every_n_steps,
         accumulate_grad_batches=args.accumulate_grad_batches,
+        fast_dev_run=args.fast_dev_run,
         callbacks=[
             ModelCheckpoint(
                 monitor="val_wer",
