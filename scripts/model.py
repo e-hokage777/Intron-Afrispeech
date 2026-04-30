@@ -1,5 +1,5 @@
 import torch
-import pytorch_lightning as pl
+import lightning as pl
 from transformers import Wav2Vec2ForCTC, Wav2Vec2Processor
 import jiwer
 

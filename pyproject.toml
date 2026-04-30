@@ -6,11 +6,26 @@ authors = [
     {name = "e-hokge777",email = "e.hokage777@gmail.com"}
 ]
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.13,<3.14"
 dependencies = [
+    "torch (>=2.11.0,<3.0.0)",
+    "torchaudio (>=2.11.0,<3.0.0)",
+    "lightning (>=2.6.3,<3.0.0)",
+    "transformers (>=5.7.0,<6.0.0)",
+    "pandas (>=3.0.2,<4.0.0)",
+    "scikit-learn (>=1.8.0,<2.0.0)",
+    "jiwer (>=4.0.0,<5.0.0)"
 ]
 
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+
+[tool.poetry]
+package-mode=false
+[dependency-groups]
+dev = [
+    "ipykernel (>=7.2.0,<8.0.0)"
+]

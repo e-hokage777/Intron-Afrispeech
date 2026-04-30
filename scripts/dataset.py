@@ -5,10 +5,11 @@ from torch.utils.data import Dataset
 from utils import normalize_text
 
 class ASRDataset(Dataset):
-    def __init__(self, csv_path, processor, sample_rate=16000):
+    def __init__(self, csv_path, processor, sample_rate=16000, base_path="/shared/data"):
         self.df = pd.read_csv(csv_path)
         self.processor = processor
         self.sample_rate = sample_rate
+        self.base_path = base_path
 
     def __len__(self):
         return len(self.df)
@@ -22,6 +23,7 @@ class ASRDataset(Dataset):
     def __getitem__(self, idx):
         row = self.df.iloc[idx]
 
+        audio_path = self.base_path + "/" + row["audio_path"]
         audio = self.load_audio(row["audio_path"])
         text = normalize_text(row["transcript"])
 
