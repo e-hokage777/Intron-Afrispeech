@@ -3,8 +3,9 @@ import lightning as pl
 from torch.utils.data import DataLoader
 from transformers import Wav2Vec2Processor
 from lightning.pytorch.callbacks import ModelCheckpoint
+from lightning.pytorch.strategies import DDPStrategy
 
-from dataset import ASRDataset, collate_fn
+from dataset import ASRDataset, DataCollatorCTC
 from model import ASRModel
 
 
@@ -18,13 +19,14 @@ def parse_args():
 
     # Hardware
     parser.add_argument("--accelerator", type=str, default="gpu")
-    parser.add_argument("--devices", type=int, default=1)
+    parser.add_argument("--devices", type=str, default="1")
     parser.add_argument("--precision", type=int, default=16)
 
     # Trainer tweaks
     parser.add_argument("--gradient_clip_val", type=float, default=1.0)
     parser.add_argument("--log_every_n_steps", type=int, default=10)
     parser.add_argument("--accumulate_grad_batches", type=int, default=1)
+    parser.add_argument("--checkpoint-path", type=str, default=None)
 
     # Paths
     parser.add_argument("--train_csv", type=str, default="data/train.csv")
@@ -51,12 +53,14 @@ def main():
     train_dataset = ASRDataset(csv_path=args.train_csv, processor=processor)
 
     val_dataset = ASRDataset(csv_path=args.val_csv, processor=processor)
+    
+    collator = DataCollatorCTC(processor)
 
     train_loader = DataLoader(
         train_dataset,
         batch_size=args.batch_size,
         shuffle=True,
-        collate_fn=collate_fn,
+        collate_fn=collator,
         num_workers=args.num_workers,
         pin_memory=args.pin_memory,
     )
@@ -65,12 +69,15 @@ def main():
         val_dataset,
         batch_size=args.batch_size,
         shuffle=False,
-        collate_fn=collate_fn,
+        collate_fn=collator,
         num_workers=args.num_workers,
         pin_memory=args.pin_memory,
     )
-
-    model = ASRModel(model_name=args.model_name, lr=args.lr)
+    
+    if args.checkpoint_path is not None:
+        model = ASRModel.load_from_checkpoint(args.checkpoint_path)
+    else:
+        model = ASRModel(model_name=args.model_name, lr=args.lr)
 
     trainer = pl.Trainer(
         max_epochs=args.max_epochs,
@@ -81,6 +88,7 @@ def main():
         log_every_n_steps=args.log_every_n_steps,
         accumulate_grad_batches=args.accumulate_grad_batches,
         fast_dev_run=args.fast_dev_run,
+        strategy=DDPStrategy(find_unused_parameters=True),
         callbacks=[
             ModelCheckpoint(
                 monitor="val_wer",

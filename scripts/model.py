@@ -23,7 +23,7 @@ class ASRModel(pl.LightningModule):
         )
         loss = outputs.loss
 
-        self.log("train_loss", loss)
+        self.log("train_loss", loss, prog_bar=True)
         return loss
 
     def validation_step(self, batch, batch_idx):

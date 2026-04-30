@@ -21,11 +21,27 @@ class ASRDataset(Dataset):
     def __len__(self):
         return len(self.df)
 
+    # def load_audio(self, path):
+    #     waveform, sr = torchaudio.load(path)
+    #     if sr != self.sample_rate:
+    #         waveform = torchaudio.functional.resample(waveform, sr, self.sample_rate)
+    #     return waveform.squeeze(0)
+    
     def load_audio(self, path):
         waveform, sr = torchaudio.load(path)
+
+        # ✅ Convert to mono (CRITICAL FIX)
+        if waveform.shape[0] > 1:
+            waveform = waveform.mean(dim=0)
+        else:
+            waveform = waveform.squeeze(0)
+
         if sr != self.sample_rate:
-            waveform = torchaudio.functional.resample(waveform, sr, self.sample_rate)
-        return waveform.squeeze(0)
+            waveform = torchaudio.functional.resample(
+                waveform, sr, self.sample_rate
+            )
+
+        return waveform
 
     def __getitem__(self, idx):
         row = self.df.iloc[idx]
@@ -37,10 +53,12 @@ class ASRDataset(Dataset):
         inputs = self.processor(
             audio, sampling_rate=16000, return_tensors="pt", padding=True
         )
+        
 
         labels = self.processor.tokenizer(
             text, return_tensors="pt", padding=True
         ).input_ids
+        
 
         return {
             "input_values": inputs.input_values[0],
@@ -49,14 +67,51 @@ class ASRDataset(Dataset):
         }
 
 
-def collate_fn(batch):
-    input_values = [x["input_values"] for x in batch]
-    labels = [x["labels"] for x in batch]
-    texts = [x["text"] for x in batch]
+# def collate_fn(batch):
+#     input_values = [x["input_values"] for x in batch]
+#     labels = [x["labels"] for x in batch]
+#     texts = [x["text"] for x in batch]
 
-    input_values = torch.nn.utils.rnn.pad_sequence(input_values, batch_first=True)
-    labels = torch.nn.utils.rnn.pad_sequence(
-        labels, batch_first=True, padding_value=-100
-    )
+#     input_values = torch.nn.utils.rnn.pad_sequence(input_values, batch_first=True)
+#     labels = torch.nn.utils.rnn.pad_sequence(
+#         labels, batch_first=True, padding_value=-100
+#     )
 
-    return {"input_values": input_values, "labels": labels, "text": texts}
+#     return {"input_values": input_values, "labels": labels, "text": texts}
+
+
+class DataCollatorCTC:
+    def __init__(self, processor):
+        self.processor = processor
+
+    def __call__(self, batch):
+        input_values = [x["input_values"] for x in batch]
+        labels = [x["labels"] for x in batch]
+        texts = [x["text"] for x in batch]
+
+        # Proper audio padding
+        inputs = self.processor.pad(
+            {"input_values": input_values},
+            padding=True,
+            return_tensors="pt"
+        )
+
+        # Proper label padding
+        labels_batch = self.processor.tokenizer.pad(
+            {"input_ids": labels},
+            padding=True,
+            return_tensors="pt"
+        )
+
+        labels = labels_batch["input_ids"].masked_fill(
+            labels_batch["input_ids"] == self.processor.tokenizer.pad_token_id,
+            -100
+        )
+        
+
+        return {
+            "input_values": inputs["input_values"],
+            # "attention_mask": inputs["attention_mask"],
+            "labels": labels,
+            "text": texts
+        }
