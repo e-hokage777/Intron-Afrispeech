@@ -94,7 +94,10 @@ def main():
     predictions = []
 
     for _, row in tqdm(df.iterrows(), total=len(df)):
-        audio_path = cfg.DATABASE_TEST_PATH + "/" + row["audio_path"]
+        if row["split"] == "test":
+            audio_path = cfg.DATABASE_TEST_PATH + "/" + row["audio_path"]
+        else:
+            audio_path = cfg.DATABASE_DEV_PATH + "/" + row["audio_path"]
 
         try:
             waveform = load_audio(audio_path, sample_rate)

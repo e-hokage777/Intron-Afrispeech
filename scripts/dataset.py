@@ -43,11 +43,7 @@ class ASRDataset(Dataset):
     def __getitem__(self, idx):
         row = self.df.iloc[idx]
 
-        if row["split"] == "test":
-            audio_path = cfg.DATABASE_TEST_PATH + "/" + row["audio_path"]
-        else:
-            audio_path = cfg.DATABASE_DEV_PATH + "/" + row["audio_path"]
-
+        audio_path = self.base_path + "/" + row["audio_path"]
         audio = self.load_audio(audio_path)
         text = normalize_text(row["transcript"])
 
@@ -151,6 +147,11 @@ class PredictDataset(Dataset):
 
     def __getitem__(self, idx):
         row = self.df.iloc[idx]
+        
+        if row["split"] == "test":
+            audio_path = cfg.DATABASE_TEST_PATH + "/" + row["audio_path"]
+        else:
+            audio_path = cfg.DATABASE_DEV_PATH + "/" + row["audio_path"]
 
         audio_path = self.base_path + "/" + row["audio_path"]
         audio = self.load_audio(audio_path)
