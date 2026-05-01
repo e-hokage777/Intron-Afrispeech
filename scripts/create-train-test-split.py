@@ -1,7 +1,7 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
 import os
-from core import config as cfg
+from core.config import config as cfg
 import torchaudio
 
 def is_file_good(path):
@@ -10,6 +10,7 @@ def is_file_good(path):
         return True
     except:
         return False
+    
 
 if __name__ == "__main__":
     df = pd.read_csv("data/train_metadata.csv")
@@ -18,7 +19,7 @@ if __name__ == "__main__":
     ## strip out missing data
     indices_to_remove = []
     for index, row in df.iterrows():
-        full_path = cfg.DATA_BASE_PATH + "/" + row["audio_path"]
+        full_path = cfg.DATABASE_TRAIN_PATH + "/" + row["audio_path"]
         if not os.path.exists(full_path) or not is_file_good(full_path):
             indices_to_remove.append(index)
     

@@ -13,7 +13,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     # Training params
-    parser.add_argument("--max_epochs", type=int, default=20)
+    parser.add_argument("--max_epochs", type=int, default=10)
     parser.add_argument("--batch_size", type=int, default=8)
     parser.add_argument("--lr", type=float, default=1e-4)
 
@@ -25,7 +25,7 @@ def parse_args():
     # Trainer tweaks
     parser.add_argument("--gradient_clip_val", type=float, default=1.0)
     parser.add_argument("--log_every_n_steps", type=int, default=10)
-    parser.add_argument("--accumulate_grad_batches", type=int, default=1)
+    parser.add_argument("--accumulate_grad_batches", type=int, default=4)
     parser.add_argument("--checkpoint-path", type=str, default=None)
 
     # Paths
