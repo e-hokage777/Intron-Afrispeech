@@ -31,6 +31,7 @@ class ASRModel(pl.LightningModule):
         )
         loss = outputs.loss
 
+        self._log_lr()
         self.log("train_loss", loss, prog_bar=True)
         return loss
 
@@ -72,3 +73,12 @@ class ASRModel(pl.LightningModule):
         )
 
         return [optimizer], [scheduler]
+    
+    
+    def _log_lr(self):
+         # Get the current LR from the optimizer
+        opt = self.optimizers()
+        lr = opt.param_groups[0]['lr']
+        
+        # Set prog_bar=True to show it in the terminal
+        self.log("lr", lr*10e8, prog_bar=True, on_step=True)

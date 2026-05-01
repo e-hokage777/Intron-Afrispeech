@@ -2,11 +2,12 @@ import argparse
 import lightning as pl
 from torch.utils.data import DataLoader
 from transformers import Wav2Vec2Processor
-from lightning.pytorch.callbacks import ModelCheckpoint
+from lightning.pytorch.callbacks import ModelCheckpoint, LearningRateMonitor
 from lightning.pytorch.strategies import DDPStrategy
 
 from dataset import ASRDataset, DataCollatorCTC
 from model import ASRModel
+
 
 
 def parse_args():
@@ -15,7 +16,7 @@ def parse_args():
     # Training params
     parser.add_argument("--max_epochs", type=int, default=10)
     parser.add_argument("--batch_size", type=int, default=8)
-    parser.add_argument("--lr", type=float, default=1e-4)
+    parser.add_argument("--lr", type=float, default=3e-6)
 
     # Hardware
     parser.add_argument("--accelerator", type=str, default="gpu")
@@ -38,7 +39,7 @@ def parse_args():
 
     # Model
     parser.add_argument("--model_name", type=str, default="facebook/wav2vec2-base-960h")
-    
+
     ## configs
     parser.add_argument("--fast_dev_run", action="store_true")
 
@@ -53,7 +54,7 @@ def main():
     train_dataset = ASRDataset(csv_path=args.train_csv, processor=processor)
 
     val_dataset = ASRDataset(csv_path=args.val_csv, processor=processor)
-    
+
     collator = DataCollatorCTC(processor)
 
     train_loader = DataLoader(
@@ -73,7 +74,7 @@ def main():
         num_workers=args.num_workers,
         pin_memory=args.pin_memory,
     )
-    
+
     if args.checkpoint_path is not None:
         model = ASRModel.load_from_checkpoint(args.checkpoint_path)
     else:
@@ -96,7 +97,8 @@ def main():
                 save_top_k=1,
                 dirpath="checkpoints/facebook-wav2vec2-base-960h",
                 filename="wav2vec2-base-960h-{epoch:02d}-{val_wer:.2f}",
-            )
+            ),
+            LearningRateMonitor(logging_interval="step"),
         ],
     )
 

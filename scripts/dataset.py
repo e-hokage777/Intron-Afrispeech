@@ -3,6 +3,7 @@ import torchaudio
 import pandas as pd
 from torch.utils.data import Dataset
 from utils import normalize_text
+from core.config import config as cfg
 
 
 class ASRDataset(Dataset):
@@ -11,12 +12,10 @@ class ASRDataset(Dataset):
         csv_path,
         processor,
         sample_rate=16000,
-        base_path="/shared/data/afrispeech/afrispeech-train",
     ):
         self.df = pd.read_csv(csv_path)
         self.processor = processor
         self.sample_rate = sample_rate
-        self.base_path = base_path
 
     def __len__(self):
         return len(self.df)
@@ -44,7 +43,11 @@ class ASRDataset(Dataset):
     def __getitem__(self, idx):
         row = self.df.iloc[idx]
 
-        audio_path = self.base_path + "/" + row["audio_path"]
+        if row["split"] == "test":
+            audio_path = cfg.DATABASE_TEST_PATH + "/" + row["audio_path"]
+        else:
+            audio_path = cfg.DATABASE_DEV_PATH + "/" + row["audio_path"]
+
         audio = self.load_audio(audio_path)
         text = normalize_text(row["transcript"])
 
